@@ -30,6 +30,7 @@ import {
     isSemVerConstraint,
 } from './useEditableConstraint/editable-constraint-type.ts';
 import type { ConstraintValidationResult } from './useEditableConstraint/constraint-validator.ts';
+import { useOptionalPathParam } from 'hooks/useOptionalPathParam.ts';
 
 const Container = styled('article')(({ theme }) => ({
     '--padding': theme.spacing(2),
@@ -250,17 +251,31 @@ export const EditableConstraint: FC<Props> = ({
         [updateConstraint],
     );
 
+    const projectId = useOptionalPathParam('projectId');
     const { context } = useUnleashContext();
+    const { context: projectSpecificContext } = useUnleashContext(
+        undefined,
+        projectId,
+    );
+
+    const fullContextList = projectId
+        ? context
+              .concat(projectSpecificContext)
+              .toSorted((a, b) => a.name.localeCompare(b.name))
+        : context;
+
     const { contextName, operator } = localConstraint;
     const showCaseSensitiveButton = isStringOperator(operator);
     const deleteButtonRef = useRef<HTMLButtonElement>(null);
     const addValuesButtonRef = useRef<HTMLButtonElement>(null);
 
-    if (!context) {
+    if (!fullContextList) {
         return null;
     }
 
-    const extantContextFieldNames = context.map((context) => context.name);
+    const extantContextFieldNames = fullContextList.map(
+        (context) => context.name,
+    );
     const contextFieldHasBeenDeleted = !extantContextFieldNames.includes(
         localConstraint.contextName,
     );

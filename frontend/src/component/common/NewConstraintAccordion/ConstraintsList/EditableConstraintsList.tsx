@@ -9,6 +9,7 @@ import { ConstraintsList } from 'component/common/ConstraintsList/ConstraintsLis
 import { EditableConstraint } from 'component/feature/FeatureStrategy/FeatureStrategyConstraints/EditableConstraint/EditableConstraint';
 import { createEmptyConstraint } from '../../../../utils/createEmptyConstraint.ts';
 import { constraintId } from 'constants/constraintId.ts';
+import { useOptionalPathParam } from 'hooks/useOptionalPathParam.ts';
 
 export interface IEditableConstraintsListRef {
     addConstraint?: (contextName: string) => void;
@@ -29,7 +30,18 @@ export const EditableConstraintsList = forwardRef<
     IEditableConstraintsListRef | undefined,
     IEditableConstraintsListProps
 >(({ constraints, setConstraints }, ref) => {
+    const projectId = useOptionalPathParam('projectId');
     const { context } = useUnleashContext();
+    const { context: projectSpecificContext } = useUnleashContext(
+        undefined,
+        projectId,
+    );
+
+    const fullContextList = projectId
+        ? context
+              .concat(projectSpecificContext)
+              .toSorted((a, b) => a.name.localeCompare(b.name))
+        : context;
 
     useImperativeHandle(ref, () => ({
         addConstraint(contextName: string) {
@@ -73,7 +85,7 @@ export const EditableConstraintsList = forwardRef<
             );
         };
 
-    if (context.length === 0) {
+    if (fullContextList.length === 0) {
         return null;
     }
 
